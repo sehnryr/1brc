@@ -1,0 +1,19 @@
+[workspace]
+members = ["create-sample"]
+resolver = "2"
+package = { publish = false, edition = "2021" }
+
+[profile.release]
+opt-level = 3
+strip = "symbols"
+lto = true
+panic = "abort"
+codegen-units = 1
+
+[package]
+name = "onebrc"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
