@@ -45,4 +45,18 @@ impl Record {
         self.sum += temperature;
         self.count += 1;
     }
+
+    #[inline(always)]
+    pub fn merge(&mut self, other: Self) {
+        if other.min < self.min {
+            self.min = other.min;
+        }
+
+        if other.max > self.max {
+            self.max = other.max;
+        }
+
+        self.sum += other.sum;
+        self.count += other.count;
+    }
 }

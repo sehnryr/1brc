@@ -48,6 +48,24 @@ impl HashTable {
     }
 
     #[inline(always)]
+    pub fn insert_or_merge(&mut self, key: impl Hash, record: Record) {
+        if self.size >= self.buckets.len() * 3 / 4 {
+            self.resize();
+        }
+        let index = key.hash() as usize % self.buckets.len();
+        if let Some(old_record) = self.buckets[index]
+            .iter_mut()
+            .find(|(k, _)| k.hash() == key.hash())
+            .map(|(_, v)| v)
+        {
+            old_record.merge(record);
+        } else {
+            self.buckets[index].push((key.hash(), record));
+            self.size += 1;
+        }
+    }
+
+    #[inline(always)]
     fn resize(&mut self) {
         let new_size = self.buckets.len() * 2;
         let mut new_buckets = Vec::with_capacity(new_size);
@@ -65,24 +83,19 @@ impl HashTable {
 
         self.buckets = new_buckets;
     }
-
-    #[inline(always)]
-    pub fn len(&self) -> usize {
-        self.size
-    }
 }
 
 impl IntoIterator for HashTable {
-    type Item = Record;
-    type IntoIter = IntoIter<Record>;
+    type Item = (u64, Record);
+    type IntoIter = IntoIter<(u64, Record)>;
 
     #[inline(always)]
     fn into_iter(self) -> Self::IntoIter {
         let mut records = Vec::new();
 
         for bucket in self.buckets {
-            for (_, record) in bucket {
-                records.push(record);
+            for item in bucket {
+                records.push(item);
             }
         }
 
