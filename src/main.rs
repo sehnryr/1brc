@@ -1,103 +1,103 @@
-use std::collections::HashSet;
-use std::hash::Hash;
-use std::io::BufRead;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufReader, Read};
 
-struct CityTemperatureData {
-    name: Box<str>,
-    pub min: f64,
-    pub max: f64,
-    pub sum_mean: f64,
+struct Record {
+    pub min: i64,
+    pub max: i64,
+    pub sum: i64,
     pub count: usize,
 }
 
-impl Hash for CityTemperatureData {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.name.hash(state);
-    }
-}
-
-impl PartialEq for CityTemperatureData {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-impl Eq for CityTemperatureData {}
-
-impl PartialOrd for CityTemperatureData {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.name.partial_cmp(&other.name)
-    }
-}
-
-impl Ord for CityTemperatureData {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.name.cmp(&other.name)
-    }
-}
-
-impl CityTemperatureData {
-    fn new_with_temperature(name: Box<str>, temperature: f64) -> Self {
+impl Default for Record {
+    #[inline(always)]
+    fn default() -> Self {
         Self {
-            name,
-            min: temperature,
-            max: temperature,
-            sum_mean: temperature,
-            count: 1,
+            min: 0,
+            max: 0,
+            sum: 0,
+            count: 0,
         }
     }
+}
 
-    fn merge(&mut self, other: Self) {
-        if other.min < self.min {
-            self.min = other.min;
-        }
-
-        if other.max > self.max {
-            self.max = other.max;
-        }
-
-        self.sum_mean += other.sum_mean;
-        self.count += other.count;
+impl Record {
+    #[inline(always)]
+    fn add(&mut self, temperature: i64) {
+        self.min = self.min.min(temperature);
+        self.max = self.max.max(temperature);
+        self.sum += temperature;
+        self.count += 1;
     }
+}
+
+#[inline(always)]
+fn temperature_from_digits(d2: u8, d1: u8, d0: u8) -> i64 {
+    ((d0 - b'0') as u64 + (d1 - b'0') as u64 * 10 + (d2 - b'0') as u64 * 100) as i64
+}
+
+#[inline(always)]
+fn parse_line(buffer_line: &[u8]) -> (&str, i64) {
+    let (city, temperature) = match &buffer_line {
+        [city @ .., b';', b'-', d2, d1, _, d0] => (city, -temperature_from_digits(*d2, *d1, *d0)),
+        [city @ .., b';', b'-', d1, _, d0] => (city, -temperature_from_digits(b'0', *d1, *d0)),
+        [city @ .., b';', d2, d1, _, d0] => (city, temperature_from_digits(*d2, *d1, *d0)),
+        [city @ .., b';', d1, _, d0] => (city, temperature_from_digits(b'0', *d1, *d0)),
+        _ => unreachable!(),
+    };
+    (std::str::from_utf8(city).unwrap(), temperature)
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sample_file_path = std::env::args().nth(1).expect("No file path provided");
-    let sample_file = std::fs::File::open(sample_file_path)?;
-    let reader = std::io::BufReader::new(sample_file);
+    let mut sample_file = BufReader::new(File::open(sample_file_path)?);
+    let mut buffer = Vec::with_capacity(10_000_000);
+    let mut buffer_line = Vec::with_capacity(20);
 
-    let mut cities_temperature_sum: HashSet<CityTemperatureData> = HashSet::new();
+    let mut records: HashMap<Box<str>, RefCell<Record>> = HashMap::new();
 
-    for line in reader.lines() {
-        let line = line?;
-        let (city, temperature) = line.split_once(';').expect("Invalid line format");
-        let temperature = temperature
-            .parse::<f64>()
-            .expect("Invalid temperature format");
+    while sample_file
+        .by_ref()
+        .take(10_000_000)
+        .read_to_end(&mut buffer)?
+        > 0
+    {
+        let mut buffer_iter = buffer.iter();
 
-        let mut city_temperature_data =
-            CityTemperatureData::new_with_temperature(city.into(), temperature);
+        while let Some(&byte) = buffer_iter.next() {
+            if byte != b'\n' {
+                buffer_line.push(byte);
+                continue;
+            }
 
-        let old_city_temperature_data = cities_temperature_sum.take(&city_temperature_data);
+            let (city, temperature) = parse_line(&buffer_line);
 
-        if let Some(old_city_temperature_data) = old_city_temperature_data {
-            city_temperature_data.merge(old_city_temperature_data);
-            cities_temperature_sum.insert(city_temperature_data);
-        } else {
-            cities_temperature_sum.insert(city_temperature_data);
+            let record = records
+                .entry(city.into())
+                .or_insert_with(|| RefCell::new(Record::default()));
+
+            record.borrow_mut().add(temperature);
+
+            buffer_line.clear();
         }
+
+        buffer.clear();
     }
 
-    let mut cities_temperature_sum: Vec<_> = cities_temperature_sum.into_iter().collect();
-    cities_temperature_sum.sort();
+    let mut records = records
+        .into_iter()
+        .map(|(name, record)| (name, record.into_inner()))
+        .collect::<Vec<_>>();
+    records.sort_by(|(name1, _), (name2, _)| name1.cmp(name2));
 
-    for city_temperature_data in cities_temperature_sum {
+    for (city, record) in records {
         println!(
             "{};{:.1};{:.1};{:.1}",
-            city_temperature_data.name,
-            city_temperature_data.min,
-            city_temperature_data.sum_mean / city_temperature_data.count as f64,
-            city_temperature_data.max,
+            city,
+            record.min as f64 / 10.0,
+            record.sum as f64 / 10.0 / record.count as f64,
+            record.max as f64 / 10.0,
         );
     }
 
