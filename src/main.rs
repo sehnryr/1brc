@@ -38,15 +38,14 @@ fn temperature_from_digits(d2: u8, d1: u8, d0: u8) -> i64 {
 }
 
 #[inline(always)]
-fn parse_line(buffer_line: &[u8]) -> (&str, i64) {
-    let (city, temperature) = match &buffer_line {
+fn parse_line(buffer_line: &[u8]) -> (&[u8], i64) {
+    match &buffer_line {
         [city @ .., b';', b'-', d2, d1, _, d0] => (city, -temperature_from_digits(*d2, *d1, *d0)),
         [city @ .., b';', b'-', d1, _, d0] => (city, -temperature_from_digits(b'0', *d1, *d0)),
         [city @ .., b';', d2, d1, _, d0] => (city, temperature_from_digits(*d2, *d1, *d0)),
         [city @ .., b';', d1, _, d0] => (city, temperature_from_digits(b'0', *d1, *d0)),
         _ => unreachable!(),
-    };
-    (std::str::from_utf8(city).unwrap(), temperature)
+    }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -55,7 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut buffer = Vec::with_capacity(10_000_000);
     let mut buffer_line = Vec::with_capacity(20);
 
-    let mut records: HashMap<Box<str>, RefCell<Record>> = HashMap::new();
+    let mut records: HashMap<Box<[u8]>, RefCell<Record>> = HashMap::new();
 
     while sample_file
         .by_ref()
@@ -94,7 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (city, record) in records {
         println!(
             "{};{:.1};{:.1};{:.1}",
-            city,
+            std::str::from_utf8(&city)?,
             record.min as f64 / 10.0,
             record.sum as f64 / 10.0 / record.count as f64,
             record.max as f64 / 10.0,
