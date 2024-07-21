@@ -1,60 +1,23 @@
-use std::cell::RefCell;
+mod record;
+mod util;
+
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read};
 
-struct Record {
-    pub min: i64,
-    pub max: i64,
-    pub sum: i64,
-    pub count: usize,
-}
-
-impl Default for Record {
-    #[inline(always)]
-    fn default() -> Self {
-        Self {
-            min: 0,
-            max: 0,
-            sum: 0,
-            count: 0,
-        }
-    }
-}
-
-impl Record {
-    #[inline(always)]
-    fn add(&mut self, temperature: i64) {
-        self.min = self.min.min(temperature);
-        self.max = self.max.max(temperature);
-        self.sum += temperature;
-        self.count += 1;
-    }
-}
-
-#[inline(always)]
-fn temperature_from_digits(d2: u8, d1: u8, d0: u8) -> i64 {
-    ((d0 - b'0') as u64 + (d1 - b'0') as u64 * 10 + (d2 - b'0') as u64 * 100) as i64
-}
-
-#[inline(always)]
-fn parse_line(buffer_line: &[u8]) -> (&[u8], i64) {
-    match &buffer_line {
-        [city @ .., b';', b'-', d2, d1, _, d0] => (city, -temperature_from_digits(*d2, *d1, *d0)),
-        [city @ .., b';', b'-', d1, _, d0] => (city, -temperature_from_digits(b'0', *d1, *d0)),
-        [city @ .., b';', d2, d1, _, d0] => (city, temperature_from_digits(*d2, *d1, *d0)),
-        [city @ .., b';', d1, _, d0] => (city, temperature_from_digits(b'0', *d1, *d0)),
-        _ => unreachable!(),
-    }
-}
+use crate::record::Record;
+use crate::util::{hash, parse_temperature};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sample_file_path = std::env::args().nth(1).expect("No file path provided");
     let mut sample_file = BufReader::new(File::open(sample_file_path)?);
     let mut buffer = Vec::with_capacity(10_000_000);
-    let mut buffer_line = Vec::with_capacity(20);
+    let mut old_buffer_part = Vec::new();
+    let mut current_position: usize = 0;
+    let mut line_start_position: usize = 0;
+    let mut city_name_len: usize = 0;
 
-    let mut records: HashMap<Box<[u8]>, RefCell<Record>> = HashMap::new();
+    let mut records: HashMap<u64, Record> = HashMap::new();
 
     while sample_file
         .by_ref()
@@ -62,42 +25,45 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .read_to_end(&mut buffer)?
         > 0
     {
-        let mut buffer_iter = buffer.iter();
-
-        while let Some(&byte) = buffer_iter.next() {
+        buffer = [old_buffer_part.as_slice(), &buffer[..]].concat();
+        for &byte in &buffer {
+            if byte == b';' {
+                city_name_len = current_position - line_start_position;
+                current_position += 1;
+                continue;
+            }
             if byte != b'\n' {
-                buffer_line.push(byte);
+                current_position += 1;
                 continue;
             }
 
-            let (city, temperature) = parse_line(&buffer_line);
+            let city = &buffer[line_start_position..line_start_position + city_name_len];
+            let temperature = parse_temperature(
+                &buffer[line_start_position + city_name_len + 1..current_position],
+            );
 
-            let record = records
-                .entry(city.into())
-                .or_insert_with(|| RefCell::new(Record::default()));
+            records
+                .entry(hash(city))
+                .and_modify(|record| record.add(temperature))
+                .or_insert_with(|| Record::new(std::str::from_utf8(city).unwrap(), temperature));
 
-            record.borrow_mut().add(temperature);
-
-            buffer_line.clear();
+            line_start_position = current_position + 1;
+            current_position += 1;
         }
 
+        old_buffer_part = buffer[line_start_position..].to_vec();
         buffer.clear();
+        current_position = 0;
+        line_start_position = 0;
     }
 
-    let mut records = records
-        .into_iter()
-        .map(|(name, record)| (name, record.into_inner()))
-        .collect::<Vec<_>>();
-    records.sort_by(|(name1, _), (name2, _)| name1.cmp(name2));
+    println!("{}", records.len());
 
-    for (city, record) in records {
-        println!(
-            "{};{:.1};{:.1};{:.1}",
-            std::str::from_utf8(&city)?,
-            record.min as f64 / 10.0,
-            record.sum as f64 / 10.0 / record.count as f64,
-            record.max as f64 / 10.0,
-        );
+    let mut records = records.into_iter().collect::<Vec<_>>();
+    records.sort_by(|(_, record1), (_, record2)| record1.city.cmp(&record2.city));
+
+    for (_, record) in records {
+        println!("{}", record);
     }
 
     Ok(())
