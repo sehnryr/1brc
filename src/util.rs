@@ -13,14 +13,3 @@ pub fn parse_temperature(buffer_line: &[u8]) -> i64 {
         _ => unreachable!(),
     }
 }
-
-#[inline(always)]
-pub fn hash(bytes: &[u8]) -> u64 {
-    let mut hash = 0u64;
-
-    for byte in bytes {
-        hash = hash.rotate_left(3) ^ *byte as u64;
-    }
-
-    hash
-}
