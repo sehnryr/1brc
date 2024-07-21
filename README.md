@@ -6,6 +6,19 @@
 The challenge: **compute simple floating-point math over 1 billion rows. As fast
 as possible, without dependencies.**
 
+## Test Hardware
+
+-   **CPU**: AMD Ryzen™ 7 5700X × 16
+-   **RAM**: 16 GB DDR4
+-   **SSD**: PNY CS3030 1TB SSD (3,500 MB/s Seq. Read)
+
+The theoretical maximum read time for a 14 GB file (the sample file) is 4.0
+seconds.
+
+With my last implementation, the time to read the file was ~4.5 seconds. It's
+very close to the theoretical maximum, so I don't think I can improve the read
+time any further without changing either the file format or the hardware.
+
 ## Running the challenge
 
 ### Creating the sample file and expected output
