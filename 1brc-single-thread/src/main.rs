@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    for record in records.to_vec() {
+    for record in records.into_iter() {
         println!("{}", record);
     }
 
