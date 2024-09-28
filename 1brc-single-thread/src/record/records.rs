@@ -2,12 +2,12 @@ use super::hash::Hash;
 use super::raw::RawRecord;
 use super::record::Record;
 
-pub struct RecordMap {
+pub struct Records {
     buckets: Vec<Vec<(u16, Record)>>,
     size: usize,
 }
 
-impl RecordMap {
+impl Records {
     #[inline(always)]
     pub fn new() -> Self {
         let initial_size = 1 << 16;
