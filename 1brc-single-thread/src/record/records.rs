@@ -41,15 +41,10 @@ impl Records {
         let mut records = Vec::new();
 
         for bucket in self.buckets {
-            // if bucket.len() > 1 {
-            //     println!("{}", bucket.len());
-            // }
             for (_, record) in bucket {
                 records.push(record);
             }
         }
-
-        // println!("{}", records.len());
 
         records.sort_by(|record1, record2| record1.city.cmp(&record2.city));
 
