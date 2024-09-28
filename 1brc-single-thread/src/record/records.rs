@@ -1,3 +1,5 @@
+use std::vec::IntoIter;
+
 use super::hash::Hash;
 use super::raw::RawRecord;
 use super::record::Record;
@@ -36,8 +38,13 @@ impl Records {
             .find(|(k, _)| *k == hash)
             .map(|(_, v)| v.add(raw_record.temperature()));
     }
+}
 
-    pub fn to_vec(self) -> Vec<Record> {
+impl IntoIterator for Records {
+    type Item = Record;
+    type IntoIter = IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
         let mut records = Vec::new();
 
         for bucket in self.buckets {
@@ -48,6 +55,6 @@ impl Records {
 
         records.sort_by(|record1, record2| record1.city.cmp(&record2.city));
 
-        records
+        records.into_iter()
     }
 }
