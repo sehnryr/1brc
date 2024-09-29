@@ -1,5 +1,5 @@
 [workspace]
-members = ["create-sample", "1brc-single-thread"]
+members = ["create-sample"]
 resolver = "2"
 package = { publish = false, edition = "2021" }
 
@@ -15,5 +15,9 @@ name = "onebrc"
 version = "0.1.0"
 edition.workspace = true
 publish.workspace = true
+
+[features]
+default = ["thread"]
+thread = []
 
 [dependencies]
