@@ -2,9 +2,9 @@ use super::raw::RawRecord;
 
 pub struct Record {
     pub city: Box<str>,
-    pub min: i64,
-    pub max: i64,
-    pub sum: i64,
+    pub min: i32,
+    pub max: i32,
+    pub sum: i32,
     pub count: usize,
 }
 
@@ -24,7 +24,7 @@ impl std::fmt::Display for Record {
 
 impl Record {
     #[inline(always)]
-    pub fn new(city: &str, temperature: i64) -> Self {
+    pub fn new(city: &str, temperature: i32) -> Self {
         Self {
             city: Box::from(city),
             min: temperature,
@@ -35,7 +35,7 @@ impl Record {
     }
 
     #[inline(always)]
-    pub fn add(&mut self, temperature: i64) {
+    pub fn add(&mut self, temperature: i32) {
         self.min = self.min.min(temperature);
         self.max = self.max.max(temperature);
         self.sum += temperature;

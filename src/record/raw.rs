@@ -2,12 +2,12 @@ use crate::hash::Hash;
 
 pub struct RawRecord<'a> {
     city: &'a [u8],
-    temperature: i64,
+    temperature: i32,
 }
 
 impl<'a> RawRecord<'a> {
     #[inline(always)]
-    pub fn new(city: &'a [u8], temperature: i64) -> Self {
+    pub fn new(city: &'a [u8], temperature: i32) -> Self {
         Self { city, temperature }
     }
 
@@ -17,7 +17,7 @@ impl<'a> RawRecord<'a> {
     }
 
     #[inline(always)]
-    pub fn temperature(&self) -> i64 {
+    pub fn temperature(&self) -> i32 {
         self.temperature
     }
 }
