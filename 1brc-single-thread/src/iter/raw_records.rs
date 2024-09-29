@@ -2,7 +2,7 @@ use crate::record::RawRecord;
 use crate::util::parse_temperature;
 
 pub struct ToRawRecords<'a> {
-    lines: &'a [u8],
+    chunk: &'a [u8],
     position: usize,
 }
 
@@ -10,11 +10,11 @@ impl<'a> Iterator for ToRawRecords<'a> {
     type Item = RawRecord<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.position >= self.lines.len() {
+        if self.position >= self.chunk.len() {
             return None;
         }
 
-        let chunk = &self.lines[self.position..];
+        let chunk = &self.chunk[self.position..];
 
         let mut city_len = 0;
         let mut line_len = 0;
@@ -33,7 +33,7 @@ impl<'a> Iterator for ToRawRecords<'a> {
 
         self.position += line_len + 1;
 
-        return Some(RawRecord::new(city, temperature));
+        Some(RawRecord::new(city, temperature))
     }
 }
 
@@ -48,7 +48,7 @@ impl<'a> IterRawRecords for &'a [u8] {
 
     fn iter_raw_records(self) -> Self::Output {
         ToRawRecords {
-            lines: self,
+            chunk: self,
             position: 0,
         }
     }
