@@ -32,12 +32,10 @@ impl<P: AsRef<Path>> ChunkBuilder<P> {
         let chunk_end_position = offset + reader.seek_byte(b'\n')? + 1;
 
         // Return chunk
-        reader.seek(SeekFrom::Start(chunk_start_position as u64))?;
-
+        let size = chunk_end_position - chunk_start_position;
         let mut buffer = Vec::with_capacity(size);
-        reader
-            .take((chunk_end_position - chunk_start_position) as u64)
-            .read_to_end(&mut buffer)?;
+        reader.seek(SeekFrom::Start(chunk_start_position as u64))?;
+        reader.take(size as u64).read_to_end(&mut buffer)?;
         Ok(buffer)
     }
 }
