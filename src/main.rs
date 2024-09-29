@@ -1,112 +1,52 @@
-mod hash_table;
+mod chunk_builder;
+mod hash;
+mod iter;
 mod record;
 mod util;
 
-use std::fs::File;
-use std::io::{Read, Seek, SeekFrom};
+use std::path::Path;
+#[cfg(feature = "thread")]
 use std::thread;
 
-use crate::hash_table::{Hash, HashTable};
-use crate::record::Record;
-use crate::util::parse_temperature;
+use crate::chunk_builder::ChunkBuilder;
+use crate::iter::IterRawRecords;
+use crate::record::Records;
 
-const BUFFER_SIZE: usize = 1_000_000;
+fn get_records<P, F>(path: P, index: F) -> Records
+where
+    P: AsRef<Path>,
+    F: Fn(usize) -> usize,
+{
+    let chunks = ChunkBuilder::new(path);
+    let mut records = Records::new();
 
-fn find_offset<R: Read + Seek>(file: &mut R) -> usize {
-    let mut offset = 0;
-    let mut byte = [0u8; 1];
-
-    loop {
-        if let Err(_) = file.read_exact(&mut byte) {
-            break;
+    let mut i = 0;
+    while let Ok(chunk) = chunks.get_chunk(index(i), 1_000_000) {
+        for record in chunk.iter_raw_records() {
+            records.add(record);
         }
-        if byte[0] == b'\n' {
-            break;
-        }
-        file.seek(SeekFrom::Current(-2)).unwrap();
-        offset += 1;
+        i += 1;
     }
 
-    offset
+    records
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let sample_file_path = std::env::args().nth(1).expect("No file path provided");
-
+#[cfg(feature = "thread")]
+fn get_records_thread<P: AsRef<Path> + Clone + Send + 'static>(path: P) -> Records {
     let cpu_count: usize = std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(1);
     let thread_count = cpu_count.min(8);
-    let (tx, rx) = std::sync::mpsc::channel::<HashTable>();
+    let (tx, rx) = std::sync::mpsc::channel::<Records>();
 
     let mut threads = Vec::with_capacity(thread_count);
 
     for thread_index in 0..thread_count {
         let tx = tx.clone();
-        let sample_file_path = sample_file_path.clone();
+        let path = path.clone();
 
         threads.push(thread::spawn(move || {
-            let mut sample_file = File::open(sample_file_path).unwrap();
-
-            let mut records = HashTable::new();
-            let mut buffer = Vec::with_capacity(BUFFER_SIZE);
-
-            let mut loop_count = 0;
-            loop {
-                let mut current_position: usize = 0;
-                let mut line_start_position: usize = 0;
-                let mut city_name_len: usize = 0;
-
-                sample_file
-                    .seek(SeekFrom::Start(
-                        (BUFFER_SIZE * (thread_index + loop_count * thread_count)) as u64,
-                    ))
-                    .unwrap();
-
-                let offset = if thread_index == 0 && loop_count == 0 {
-                    0
-                } else {
-                    find_offset(&mut sample_file)
-                };
-
-                if sample_file
-                    .by_ref()
-                    .take(BUFFER_SIZE as u64 + offset as u64)
-                    .read_to_end(&mut buffer)
-                    .unwrap()
-                    <= 0
-                {
-                    break;
-                }
-
-                for &byte in &buffer {
-                    if byte == b';' {
-                        city_name_len = current_position - line_start_position;
-                        current_position += 1;
-                        continue;
-                    }
-                    if byte != b'\n' {
-                        current_position += 1;
-                        continue;
-                    }
-
-                    let city = &buffer[line_start_position..line_start_position + city_name_len];
-                    let temperature = parse_temperature(
-                        &buffer[line_start_position + city_name_len + 1..current_position],
-                    );
-
-                    records.insert_or_update(city.hash(), temperature, || {
-                        Record::new(std::str::from_utf8(city).unwrap(), temperature)
-                    });
-
-                    line_start_position = current_position + 1;
-                    current_position += 1;
-                }
-
-                buffer.clear();
-                loop_count += 1;
-            }
-
+            let records = get_records(path, |i| thread_index + i * thread_count);
             tx.send(records).unwrap();
         }));
     }
@@ -115,18 +55,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         thread.join().unwrap();
     }
 
-    let mut final_records = HashTable::new();
-
-    while let Ok(table) = rx.try_recv() {
-        for (key, record) in table {
-            final_records.insert_or_merge(key, record);
-        }
+    let mut records = Records::new();
+    while let Ok(records_thread) = rx.try_recv() {
+        records.merge(records_thread);
     }
 
-    let mut records = final_records.into_iter().collect::<Vec<_>>();
-    records.sort_by(|(_, record1), (_, record2)| record1.city.cmp(&record2.city));
+    records
+}
 
-    for (_, record) in records {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let sample_file_path = std::env::args().nth(1).expect("No file path provided");
+
+    #[cfg(not(feature = "thread"))]
+    let records = get_records(sample_file_path, |i| i);
+    #[cfg(feature = "thread")]
+    let records = get_records_thread(sample_file_path);
+
+    for record in records.into_iter() {
         println!("{}", record);
     }
 

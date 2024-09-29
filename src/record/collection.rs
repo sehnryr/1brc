@@ -39,6 +39,29 @@ impl Records {
             .find(|(k, _)| *k == hash)
             .map(|(_, v)| v.add(raw_record.temperature()));
     }
+
+    #[cfg(feature = "thread")]
+    #[inline(always)]
+    pub fn merge(&mut self, other: Records) {
+        for bucket in other.buckets {
+            for (hash, record) in bucket {
+                if self.buckets[hash as usize]
+                    .iter_mut()
+                    .find(|(k, _)| *k == hash)
+                    .map(|(_, v)| v)
+                    .is_some()
+                {
+                    self.buckets[hash as usize]
+                        .iter_mut()
+                        .find(|(k, _)| *k == hash)
+                        .map(|(_, v)| v.merge(record));
+                } else {
+                    self.buckets[hash as usize].push((hash, record));
+                    self.size += 1;
+                }
+            }
+        }
+    }
 }
 
 impl IntoIterator for Records {
