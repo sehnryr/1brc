@@ -1,4 +1,4 @@
-use crate::record::raw::RawRecord;
+use crate::record::RawRecord;
 use crate::util::parse_temperature;
 
 pub struct ToRawRecords<'a> {
