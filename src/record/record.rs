@@ -36,14 +36,8 @@ impl Record {
 
     #[inline(always)]
     pub fn add(&mut self, temperature: i64) {
-        if temperature < self.min {
-            self.min = temperature;
-        }
-
-        if temperature > self.max {
-            self.max = temperature;
-        }
-
+        self.min = self.min.min(temperature);
+        self.max = self.max.max(temperature);
         self.sum += temperature;
         self.count += 1;
     }
@@ -51,14 +45,8 @@ impl Record {
     #[cfg(feature = "thread")]
     #[inline(always)]
     pub fn merge(&mut self, other: Self) {
-        if other.min < self.min {
-            self.min = other.min;
-        }
-
-        if other.max > self.max {
-            self.max = other.max;
-        }
-
+        self.min = self.min.min(other.min);
+        self.max = self.max.max(other.max);
         self.sum += other.sum;
         self.count += other.count;
     }
