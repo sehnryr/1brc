@@ -9,15 +9,22 @@ as possible, without dependencies.**
 ## Test Hardware
 
 -   **CPU**: AMD Ryzen™ 7 5700X × 16
--   **RAM**: 16 GB DDR4
+-   **RAM**: 32 GB DDR4
 -   **SSD**: PNY CS3030 1TB SSD (3,500 MB/s Seq. Read)
 
-The theoretical maximum read time for a 14 GB file (the sample file) is 4.0
-seconds.
+If the file is read sequentially, the theoretical maximum read time for a 14 GB
+file is 4.0 seconds.
 
-With my last implementation, the time to read the file was ~4.5 seconds. It's
-very close to the theoretical maximum, so I don't think I can improve the read
-time any further without changing either the file format or the hardware.
+Bypassing the file system can be done in many ways. The most common way is to
+use memory-mapped files using the `mmap` system call. However, this approach
+requires a dependency on the `libc` or `memmap` crate, which is not allowed in
+the challenge.
+
+The way I chose was to move the file manually to a `tmpfs` partition. This way,
+the file is read directly from memory, bypassing the file system. This approach
+is not portable, but it's the fastest way to read a file with the given
+constraints. The downside is that the file must fit in memory, which is not
+always possible.
 
 ## Running the challenge
 
@@ -27,6 +34,9 @@ To create the sample file and the expected output, run the following command:
 
 ```bash
 cargo run --release --package create-sample 1000000000
+
+# Optionally, move the file to a tmpfs partition
+mv sample.txt /tmp
 ```
 
 > [!WARNING]
