@@ -26,18 +26,20 @@ impl Records {
     #[inline(always)]
     pub fn add(&mut self, raw_record: RawRecord) {
         let hash = raw_record.hash();
-        let index = hash as usize;
+        let bucket = &mut self.buckets[hash as usize];
 
-        if self.buckets[index].is_empty() {
-            self.buckets[index].push((hash, Record::from(raw_record)));
+        if bucket.is_empty() {
+            bucket.push((hash, Record::from(raw_record)));
             self.size += 1;
             return;
         }
 
-        self.buckets[index]
-            .iter_mut()
-            .find(|(k, _)| *k == hash)
-            .map(|(_, v)| v.add(raw_record.temperature()));
+        let record = if bucket.len() == 1 {
+            bucket.get_mut(0)
+        } else {
+            bucket.iter_mut().find(|(k, _)| *k == hash)
+        };
+        record.map(|(_, v)| v.add(raw_record.temperature()));
     }
 
     #[cfg(feature = "thread")]
