@@ -1,12 +1,12 @@
+mod hash;
 mod iter;
 mod record;
 mod util;
 
 use std::fs::File;
 
-use crate::iter::line_chunks::IterLineChunks;
-use crate::iter::raw_records::IterRawRecords;
-use crate::record::records::Records;
+use crate::iter::{IterLineChunks, IterRawRecords};
+use crate::record::Records;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sample_file_path = std::env::args().nth(1).expect("No file path provided");

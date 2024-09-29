@@ -1,8 +1,9 @@
 use std::vec::IntoIter;
 
-use super::hash::Hash;
-use super::raw::RawRecord;
-use super::record::Record;
+use crate::hash::Hash;
+
+use super::RawRecord;
+use super::Record;
 
 pub struct Records {
     buckets: Vec<Vec<(u16, Record)>>,

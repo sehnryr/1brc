@@ -1,4 +1,7 @@
-pub mod hash;
-pub mod raw;
-pub mod record;
-pub mod records;
+mod collection;
+mod raw;
+mod record;
+
+pub use collection::Records;
+pub use raw::RawRecord;
+pub use record::Record;
