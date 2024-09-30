@@ -1,5 +1,27 @@
 use crate::record::RawRecord;
-use crate::util::parse_temperature;
+
+#[inline(always)]
+pub fn temperature_from_digits(d2: &u8, d1: &u8, d0: &u8) -> i32 {
+    ((d0 - b'0') as u16 + (d1 - b'0') as u16 * 10 + (d2 - b'0') as u16 * 100) as i32
+}
+
+#[inline(always)]
+fn parse_record(chunk: &[u8]) -> (RawRecord, usize) {
+    // Since city names have at least 3 characters, we can skip the first 3 bytes.
+    let city_len = 3 + chunk[3..].iter().position(|&c| c == b';').unwrap();
+
+    let city = &chunk[..city_len];
+
+    let (temp, temp_len) = match &chunk[city_len + 1..] {
+        [b'-', d2, d1, b'.', d0, ..] => (-temperature_from_digits(d2, d1, d0), 5),
+        [b'-', d1, b'.', d0, ..] => (-temperature_from_digits(&b'0', d1, d0), 4),
+        [d2, d1, b'.', d0, ..] => (temperature_from_digits(d2, d1, d0), 4),
+        [d1, b'.', d0, ..] => (temperature_from_digits(&b'0', d1, d0), 3),
+        _ => unreachable!(),
+    };
+
+    (RawRecord::new(city, temp), city_len + temp_len + 2)
+}
 
 pub struct ToRawRecords<'a> {
     chunk: &'a [u8],
@@ -16,18 +38,11 @@ impl<'a> Iterator for ToRawRecords<'a> {
         }
 
         let chunk = &self.chunk[self.position..];
+        let (record, len) = parse_record(chunk);
 
-        // Since city names have at least 3 characters, we can skip the first 3 bytes.
-        // Same for the temperature, but we also need to skip the semicolon.
-        let city_len = 3 + chunk[3..].iter().position(|&c| c == b';')?;
-        let temp_len = 3 + chunk[city_len + 4..].iter().position(|&c| c == b'\n')?;
+        self.position += len;
 
-        let city = &chunk[..city_len];
-        let temperature = parse_temperature(&chunk[city_len + 1..city_len + 1 + temp_len]);
-
-        self.position += city_len + temp_len + 2;
-
-        Some(RawRecord::new(city, temperature))
+        Some(record)
     }
 }
 
