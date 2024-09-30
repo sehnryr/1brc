@@ -26,13 +26,13 @@ impl Hash for &[u8] {
                 hash.step_hash_1(*d3);
                 hash.step_hash_1(*d4);
             }
-            [d0, d1, d2, d3] => {
+            [d0, d1, d2, d3, ..] => {
                 hash.step_hash_1(*d0);
                 hash.step_hash_1(*d1);
                 hash.step_hash_1(*d2);
                 hash.step_hash_1(*d3);
             }
-            [d0, d1, d2] => {
+            [d0, d1, d2, ..] => {
                 hash.step_hash_1(*d0);
                 hash.step_hash_1(*d1);
                 hash.step_hash_1(*d2);
@@ -48,13 +48,13 @@ impl Hash for &[u8] {
                 hash.step_hash_1(*d3);
                 hash.step_hash_1(*d4);
             }
-            [d3, d2, d1, d0] => {
+            [.., d3, d2, d1, d0] => {
                 hash.step_hash_1(*d0);
                 hash.step_hash_1(*d1);
                 hash.step_hash_1(*d2);
                 hash.step_hash_1(*d3);
             }
-            [d2, d1, d0] => {
+            [.., d2, d1, d0] => {
                 hash.step_hash_1(*d0);
                 hash.step_hash_1(*d1);
                 hash.step_hash_1(*d2);
