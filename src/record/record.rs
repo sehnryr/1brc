@@ -36,8 +36,12 @@ impl Record {
 
     #[inline(always)]
     pub fn add(&mut self, temperature: i32) {
-        self.min = self.min.min(temperature);
-        self.max = self.max.max(temperature);
+        if temperature < self.min {
+            self.min = temperature;
+        } else if temperature > self.max {
+            self.max = temperature;
+        }
+
         self.sum += temperature;
         self.count += 1;
     }
