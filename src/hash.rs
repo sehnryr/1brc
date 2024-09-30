@@ -16,25 +16,16 @@ pub trait Hash {
 impl Hash for &[u8] {
     #[inline(always)]
     fn hash(&self) -> u16 {
-        let mut hash: u16 = self.len() as u16;
+        let len = self.len();
+        let mut hash: u16 = len as u16;
 
-        match self {
-            [d0, d1, d2, ..] => {
-                hash = hash.rotate_xor(*d0, 3);
-                hash = hash.rotate_xor(*d1, 7);
-                hash = hash.rotate_xor(*d2, 5);
-            }
-            _ => unreachable!(),
-        }
+        hash = hash.rotate_xor(self[0], 3);
+        hash = hash.rotate_xor(self[1], 7);
+        hash = hash.rotate_xor(self[2], 5);
 
-        match self {
-            [.., d2, d1, d0] => {
-                hash = hash.rotate_xor(*d0, 3);
-                hash = hash.rotate_xor(*d1, 5);
-                hash = hash.rotate_xor(*d2, 7);
-            }
-            _ => unreachable!(),
-        }
+        hash = hash.rotate_xor(self[len - 1], 3);
+        hash = hash.rotate_xor(self[len - 2], 5);
+        hash = hash.rotate_xor(self[len - 3], 7);
 
         hash
     }
