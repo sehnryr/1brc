@@ -5,14 +5,13 @@ mod record;
 mod util;
 
 use std::path::Path;
-#[cfg(feature = "thread")]
-use std::thread;
 
 use crate::chunk_builder::ChunkBuilder;
 use crate::iter::IterRawRecords;
 use crate::record::Records;
 
-fn get_records<P, F>(path: P, index: F) -> Records
+#[cfg(not(feature = "thread"))]
+fn get_records<P, F>(path: P) -> Records
 where
     P: AsRef<Path>,
     F: Fn(usize) -> usize,
@@ -21,7 +20,7 @@ where
     let mut records = Records::new();
 
     let mut i = 0;
-    while let Ok(chunk) = chunks.get_chunk(index(i), 1_000_000) {
+    while let Ok(chunk) = chunks.get_chunk(i, 1_000_000) {
         for record in chunk.iter_raw_records() {
             records.add(record);
         }
@@ -45,8 +44,18 @@ fn get_records_thread<P: AsRef<Path> + Clone + Send + 'static>(path: P) -> Recor
         let tx = tx.clone();
         let path = path.clone();
 
-        threads.push(thread::spawn(move || {
-            let records = get_records(path, |i| thread_index + i * thread_count);
+        threads.push(std::thread::spawn(move || {
+            let chunks = ChunkBuilder::new(path);
+            let mut records = Records::new();
+
+            let mut i = 0;
+            while let Ok(chunk) = chunks.get_chunk(thread_index + i * thread_count, 1_000_000) {
+                for record in chunk.iter_raw_records() {
+                    records.add(record);
+                }
+                i += 1;
+            }
+
             tx.send(records).unwrap();
         }));
     }
@@ -67,7 +76,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sample_file_path = std::env::args().nth(1).expect("No file path provided");
 
     #[cfg(not(feature = "thread"))]
-    let records = get_records(sample_file_path, |i| i);
+    let records = get_records(sample_file_path);
     #[cfg(feature = "thread")]
     let records = get_records_thread(sample_file_path);
 
