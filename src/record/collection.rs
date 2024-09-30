@@ -39,7 +39,7 @@ impl Records {
         } else {
             bucket.iter_mut().find(|(k, _)| *k == hash)
         };
-        record.map(|(_, v)| v.add(raw_record.temperature()));
+        record.map(|(_, v)| v.add(raw_record.temperature));
     }
 
     #[cfg(feature = "thread")]

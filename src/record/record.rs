@@ -1,7 +1,7 @@
 use super::raw::RawRecord;
 
 pub struct Record {
-    pub city: Box<str>,
+    pub city: Box<[u8]>,
     pub min: i32,
     pub max: i32,
     pub sum: i32,
@@ -14,7 +14,7 @@ impl std::fmt::Display for Record {
         write!(
             f,
             "{};{:.1};{:.1};{:.1}",
-            self.city,
+            std::str::from_utf8(&self.city).unwrap(),
             self.min as f64 / 10.0,
             self.sum as f64 / 10.0 / self.count as f64,
             self.max as f64 / 10.0,
@@ -24,7 +24,7 @@ impl std::fmt::Display for Record {
 
 impl Record {
     #[inline(always)]
-    pub fn new(city: &str, temperature: i32) -> Self {
+    pub fn new(city: &[u8], temperature: i32) -> Self {
         Self {
             city: Box::from(city),
             min: temperature,
@@ -55,9 +55,6 @@ impl Record {
 impl From<RawRecord<'_>> for Record {
     #[inline(always)]
     fn from(raw_record: RawRecord) -> Self {
-        Self::new(
-            std::str::from_utf8(raw_record.city()).unwrap(),
-            raw_record.temperature(),
-        )
+        Self::new(raw_record.city, raw_record.temperature)
     }
 }
