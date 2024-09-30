@@ -1,11 +1,11 @@
 trait HashStep {
-    fn step_hash_1(&mut self, byte: u8);
+    fn rotate_xor(&self, byte: u8, shift: u32) -> u16;
 }
 
 impl HashStep for u16 {
     #[inline(always)]
-    fn step_hash_1(&mut self, byte: u8) {
-        *self = self.rotate_left(3) ^ byte as u16;
+    fn rotate_xor(&self, byte: u8, shift: u32) -> u16 {
+        self.rotate_left(shift) ^ byte as u16
     }
 }
 
@@ -19,45 +19,19 @@ impl Hash for &[u8] {
         let mut hash: u16 = self.len() as u16;
 
         match self {
-            [d0, d1, d2, d3, d4, ..] => {
-                hash.step_hash_1(*d0);
-                hash.step_hash_1(*d1);
-                hash.step_hash_1(*d2);
-                hash.step_hash_1(*d3);
-                hash.step_hash_1(*d4);
-            }
-            [d0, d1, d2, d3, ..] => {
-                hash.step_hash_1(*d0);
-                hash.step_hash_1(*d1);
-                hash.step_hash_1(*d2);
-                hash.step_hash_1(*d3);
-            }
             [d0, d1, d2, ..] => {
-                hash.step_hash_1(*d0);
-                hash.step_hash_1(*d1);
-                hash.step_hash_1(*d2);
+                hash = hash.rotate_xor(*d0, 3);
+                hash = hash.rotate_xor(*d1, 7);
+                hash = hash.rotate_xor(*d2, 5);
             }
             _ => unreachable!(),
         }
 
         match self {
-            [.., d4, d3, d2, d1, d0] => {
-                hash.step_hash_1(*d0);
-                hash.step_hash_1(*d1);
-                hash.step_hash_1(*d2);
-                hash.step_hash_1(*d3);
-                hash.step_hash_1(*d4);
-            }
-            [.., d3, d2, d1, d0] => {
-                hash.step_hash_1(*d0);
-                hash.step_hash_1(*d1);
-                hash.step_hash_1(*d2);
-                hash.step_hash_1(*d3);
-            }
             [.., d2, d1, d0] => {
-                hash.step_hash_1(*d0);
-                hash.step_hash_1(*d1);
-                hash.step_hash_1(*d2);
+                hash = hash.rotate_xor(*d0, 3);
+                hash = hash.rotate_xor(*d1, 5);
+                hash = hash.rotate_xor(*d2, 7);
             }
             _ => unreachable!(),
         }
