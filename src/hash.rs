@@ -37,7 +37,7 @@ impl Hash for &[u8] {
                 hash.step_hash_1(*d1);
                 hash.step_hash_1(*d2);
             }
-            _ => {}
+            _ => unreachable!(),
         }
 
         match self {
@@ -59,7 +59,7 @@ impl Hash for &[u8] {
                 hash.step_hash_1(*d1);
                 hash.step_hash_1(*d2);
             }
-            _ => {}
+            _ => unreachable!(),
         }
 
         hash
