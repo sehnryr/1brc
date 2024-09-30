@@ -9,6 +9,7 @@ pub struct ToRawRecords<'a> {
 impl<'a> Iterator for ToRawRecords<'a> {
     type Item = RawRecord<'a>;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         if self.position >= self.chunk.len() {
             return None;
@@ -39,6 +40,7 @@ pub trait IterRawRecords {
 impl<'a> IterRawRecords for &'a [u8] {
     type Output = ToRawRecords<'a>;
 
+    #[inline(always)]
     fn iter_raw_records(self) -> Self::Output {
         ToRawRecords {
             chunk: self,
