@@ -27,7 +27,7 @@ fn get_records<P: AsRef<Path>>(path: P) -> Records {
 }
 
 #[cfg(feature = "thread")]
-fn get_records_thread<P: AsRef<Path> + Clone + Send + 'static>(path: P) -> Records {
+fn get_records<P: AsRef<Path> + Clone + Send + 'static>(path: P) -> Records {
     let cpu_count: usize = std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(1);
@@ -71,10 +71,7 @@ fn get_records_thread<P: AsRef<Path> + Clone + Send + 'static>(path: P) -> Recor
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sample_file_path = std::env::args().nth(1).expect("No file path provided");
 
-    #[cfg(not(feature = "thread"))]
     let records = get_records(sample_file_path);
-    #[cfg(feature = "thread")]
-    let records = get_records_thread(sample_file_path);
 
     for record in records.into_iter() {
         println!("{}", record);
