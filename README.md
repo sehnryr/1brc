@@ -10,10 +10,10 @@ as possible, without dependencies.**
 
 -   **CPU**: AMD Ryzen™ 7 5700X × 16
 -   **RAM**: 32 GB DDR4
--   **SSD**: PNY CS3030 1TB SSD (3,500 MB/s Seq. Read)
 
-If the file is read sequentially, the theoretical maximum read time for a 14 GB
-file is 4.0 seconds.
+If the file is read from a disk, it will be read sequencially and bottlenecked
+by the speed of the disk. E.g. with a 3,500 MB/s SSD, the theoretical maximum
+read time for a 14 GB file is 4.0 seconds.
 
 Bypassing the file system can be done in many ways. The most common way is to
 use memory-mapped files using the `mmap` system call. However, this approach
@@ -21,10 +21,9 @@ requires a dependency on the `libc` or `memmap` crate, which is not allowed in
 the challenge.
 
 The way I chose was to move the file manually to a `tmpfs` partition. This way,
-the file is read directly from memory, bypassing the file system. This approach
-is not portable, but it's the fastest way to read a file with the given
-constraints. The downside is that the file must fit in memory, which is not
-always possible.
+the file is read directly from memory. This approach is not portable, but it's
+the fastest way to read a file with the given constraints. The downside is that
+the file must fit in memory, which is not always possible.
 
 ## Running the challenge
 
@@ -42,7 +41,7 @@ mv sample.txt /tmp
 > [!WARNING]
 > This command will create a file with 1 billion rows, which can take a long
 > time will consume 14 GB of disk space. Make sure you have enough disk space
-> before running this command. (It took 2 minutes on my machine.)
+> before running this command. (It takes 2 minutes on my machine.)
 
 ### Running the challenge
 
