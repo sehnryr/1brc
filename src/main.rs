@@ -11,11 +11,7 @@ use crate::iter::IterRawRecords;
 use crate::record::Records;
 
 #[cfg(not(feature = "thread"))]
-fn get_records<P, F>(path: P) -> Records
-where
-    P: AsRef<Path>,
-    F: Fn(usize) -> usize,
-{
+fn get_records<P: AsRef<Path>>(path: P) -> Records {
     let chunks = ChunkBuilder::new(path);
     let mut records = Records::new();
 
