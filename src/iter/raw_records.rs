@@ -16,22 +16,15 @@ impl<'a> Iterator for ToRawRecords<'a> {
 
         let chunk = &self.chunk[self.position..];
 
-        let mut city_len = 0;
-        let mut line_len = 0;
-
-        for (i, &byte) in chunk.iter().enumerate() {
-            if byte == b';' {
-                city_len = i;
-            } else if byte == b'\n' {
-                line_len = i;
-                break;
-            }
-        }
+        // Since city names have at least 3 characters, we can skip the first 3 bytes.
+        // Same for the temperature, but we also need to skip the semicolon.
+        let city_len = 3 + chunk[3..].iter().position(|&c| c == b';')?;
+        let temp_len = 3 + chunk[city_len + 4..].iter().position(|&c| c == b'\n')?;
 
         let city = &chunk[..city_len];
-        let temperature = parse_temperature(&chunk[city_len + 1..line_len]);
+        let temperature = parse_temperature(&chunk[city_len + 1..city_len + 1 + temp_len]);
 
-        self.position += line_len + 1;
+        self.position += city_len + temp_len + 2;
 
         Some(RawRecord::new(city, temperature))
     }
