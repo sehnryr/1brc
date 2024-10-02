@@ -2,7 +2,14 @@ use crate::record::RawRecord;
 
 #[inline(always)]
 pub fn temperature_from_digits(d2: &u8, d1: &u8, d0: &u8) -> i32 {
-    ((d0 - b'0') as u16 + (d1 - b'0') as u16 * 10 + (d2 - b'0') as u16 * 100) as i32
+    let d2 = *d2 as u16;
+    let d1 = *d1 as u16;
+    let d0 = *d0 as u16;
+
+    let temperature = d2 * 100 + d1 * 10 + d0;
+    let normalized = temperature - 5328; // b'0' * 100 + b'0' * 10 + b'0'
+
+    normalized as i32
 }
 
 #[inline(always)]
