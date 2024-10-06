@@ -32,7 +32,7 @@ impl<'a> Iterator for ToCityTemperatures<'a> {
         let chunk = &self.chunk[self.position..];
 
         // Since city names have at least 3 characters, we can skip the first 3 bytes.
-        let city_len = 3 + chunk[3..].find_byte_index(b';');
+        let city_len = 3 + chunk[3..].find_byte(b';').unwrap();
         let city = &chunk[..city_len];
 
         // We don't need to check for the length of the temperature by finding the next line break.

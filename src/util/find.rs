@@ -1,12 +1,14 @@
 use std::simd::{cmp::SimdPartialEq, u8x32};
 
+type Result<T> = std::result::Result<T, ()>;
+
 pub trait FindByte {
-    fn find_byte_index(&self, byte: u8) -> usize;
+    fn find_byte(&self, byte: u8) -> Result<usize>;
 }
 
 impl FindByte for [u8] {
     #[inline(always)]
-    fn find_byte_index(&self, byte: u8) -> usize {
+    fn find_byte(&self, byte: u8) -> Result<usize> {
         let simd_width = 32; // 256-bit wide SIMD register
 
         for (i, chunk) in self.chunks_exact(simd_width).enumerate() {
@@ -24,7 +26,7 @@ impl FindByte for [u8] {
                 let mask = masks[j];
                 if mask != 0 {
                     // Calculate the position of the match
-                    return i * simd_width + j * 8 + mask.trailing_zeros() as usize;
+                    return Ok(i * simd_width + j * 8 + mask.trailing_zeros() as usize);
                 }
             }
         }
@@ -34,6 +36,6 @@ impl FindByte for [u8] {
             .remainder()
             .iter()
             .position(|&c| c == byte)
-            .unwrap()
+            .ok_or(())
     }
 }
