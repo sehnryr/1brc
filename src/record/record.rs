@@ -1,5 +1,3 @@
-use super::raw::RawRecord;
-
 pub struct Record {
     city: Box<[u8]>,
     min: i32,
@@ -58,12 +56,5 @@ impl Record {
         self.max = self.max.max(other.max);
         self.sum += other.sum;
         self.count += other.count;
-    }
-}
-
-impl From<RawRecord<'_>> for Record {
-    #[inline(always)]
-    fn from(raw_record: RawRecord) -> Self {
-        Self::new(raw_record.city, raw_record.temperature)
     }
 }

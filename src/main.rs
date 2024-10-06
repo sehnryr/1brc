@@ -9,7 +9,7 @@ mod util;
 use std::path::Path;
 
 use crate::chunk_builder::ChunkBuilder;
-use crate::iter::IterRawRecords;
+use crate::iter::IterCityTemperatures;
 use crate::record::Records;
 
 #[cfg(not(feature = "thread"))]
@@ -19,8 +19,8 @@ fn get_records<P: AsRef<Path>>(path: P) -> Records {
 
     let mut i = 0;
     while let Ok(chunk) = chunks.get_chunk(i, 1_000_000) {
-        for record in chunk.iter_raw_records() {
-            records.add(record);
+        for (city, temp) in chunk.iter_city_temperatures() {
+            records.add(city, temp);
         }
         i += 1;
     }
@@ -48,8 +48,8 @@ fn get_records<P: AsRef<Path> + Clone + Send + 'static>(path: P) -> Records {
 
             let mut i = 0;
             while let Ok(chunk) = chunks.get_chunk(thread_index + i * thread_count, 1_000_000) {
-                for record in chunk.iter_raw_records() {
-                    records.add(record);
+                for (city, temp) in chunk.iter_city_temperatures() {
+                    records.add(city, temp);
                 }
                 i += 1;
             }

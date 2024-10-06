@@ -2,7 +2,6 @@ use std::vec::IntoIter;
 
 use crate::hash::Hash;
 
-use super::RawRecord;
 use super::Record;
 
 pub struct Records {
@@ -24,12 +23,12 @@ impl Records {
     }
 
     #[inline(always)]
-    pub fn add(&mut self, raw_record: RawRecord) {
-        let hash = raw_record.hash();
+    pub fn add(&mut self, city: &[u8], temperature: i32) {
+        let hash = city.hash();
         let bucket = &mut self.buckets[hash as usize];
 
         if bucket.is_empty() {
-            bucket.push((hash, Record::from(raw_record)));
+            bucket.push((hash, Record::new(city, temperature)));
             self.size += 1;
             return;
         }
@@ -38,7 +37,7 @@ impl Records {
             1 => bucket.get_mut(0),
             _ => bucket.iter_mut().find(|(k, _)| *k == hash),
         };
-        record.map(|(_, v)| v.add(raw_record.temperature));
+        record.map(|(_, v)| v.add(temperature));
     }
 
     #[cfg(feature = "thread")]

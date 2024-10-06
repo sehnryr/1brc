@@ -1,4 +1,3 @@
-use crate::record::RawRecord;
 use crate::util::FindByte;
 
 #[inline(always)]
@@ -14,7 +13,7 @@ pub fn temperature_from_digits(d2: &u8, d1: &u8, d0: &u8) -> i32 {
 }
 
 #[inline(always)]
-fn parse_record(chunk: &[u8]) -> (RawRecord, usize) {
+fn parse_city_temperature(chunk: &[u8]) -> (&[u8], i32, usize) {
     // Since city names have at least 3 characters, we can skip the first 3 bytes.
     let city_len = 3 + &chunk[3..].find_byte_index(b';');
 
@@ -28,16 +27,16 @@ fn parse_record(chunk: &[u8]) -> (RawRecord, usize) {
         _ => unreachable!(),
     };
 
-    (RawRecord::new(city, temp), city_len + temp_len + 2)
+    (city, temp, city_len + temp_len + 2)
 }
 
-pub struct ToRawRecords<'a> {
+pub struct ToCityTemperatures<'a> {
     chunk: &'a [u8],
     position: usize,
 }
 
-impl<'a> Iterator for ToRawRecords<'a> {
-    type Item = RawRecord<'a>;
+impl<'a> Iterator for ToCityTemperatures<'a> {
+    type Item = (&'a [u8], i32);
 
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
@@ -46,26 +45,26 @@ impl<'a> Iterator for ToRawRecords<'a> {
         }
 
         let chunk = &self.chunk[self.position..];
-        let (record, len) = parse_record(chunk);
+        let (city, temp, len) = parse_city_temperature(chunk);
 
         self.position += len;
 
-        Some(record)
+        Some((city, temp))
     }
 }
 
-pub trait IterRawRecords {
+pub trait IterCityTemperatures {
     type Output;
 
-    fn iter_raw_records(self) -> Self::Output;
+    fn iter_city_temperatures(self) -> Self::Output;
 }
 
-impl<'a> IterRawRecords for &'a [u8] {
-    type Output = ToRawRecords<'a>;
+impl<'a> IterCityTemperatures for &'a [u8] {
+    type Output = ToCityTemperatures<'a>;
 
     #[inline(always)]
-    fn iter_raw_records(self) -> Self::Output {
-        ToRawRecords {
+    fn iter_city_temperatures(self) -> Self::Output {
+        ToCityTemperatures {
             chunk: self,
             position: 0,
         }

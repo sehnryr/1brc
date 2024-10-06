@@ -1,3 +1,3 @@
-mod raw_records;
+mod city_temperatures;
 
-pub use raw_records::IterRawRecords;
+pub use city_temperatures::IterCityTemperatures;
