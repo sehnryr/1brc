@@ -5,59 +5,40 @@ use crate::hash::Hash;
 use super::Record;
 
 pub struct Records {
-    buckets: Vec<Vec<(u16, Record)>>,
-    size: usize,
+    records: Vec<Option<Record>>,
 }
 
 impl Records {
     #[inline(always)]
     pub fn new() -> Self {
         let initial_size = 1 << 16;
-        let mut buckets = Vec::with_capacity(initial_size);
+        let mut records = Vec::with_capacity(initial_size);
+        records.resize_with(initial_size, || None);
 
-        for _ in 0..initial_size {
-            buckets.push(Vec::new());
-        }
-
-        Self { buckets, size: 0 }
+        Self { records }
     }
 
     #[inline(always)]
     pub fn add(&mut self, city: &[u8], temperature: i32) {
         let hash = city.hash();
-        let bucket = &mut self.buckets[hash as usize];
+        let record = &mut self.records[hash as usize];
 
-        if bucket.is_empty() {
-            bucket.push((hash, Record::new(city, temperature)));
-            self.size += 1;
-            return;
+        if let Some(record) = record {
+            record.add(temperature);
+        } else {
+            *record = Some(Record::new(city, temperature));
         }
-
-        let record = match bucket.len() {
-            1 => bucket.get_mut(0),
-            _ => bucket.iter_mut().find(|(k, _)| *k == hash),
-        };
-        record.map(|(_, v)| v.add(temperature));
     }
 
     #[cfg(feature = "thread")]
     #[inline(always)]
     pub fn merge(&mut self, other: Records) {
-        for bucket in other.buckets {
-            for (hash, record) in bucket {
-                if self.buckets[hash as usize]
-                    .iter_mut()
-                    .find(|(k, _)| *k == hash)
-                    .map(|(_, v)| v)
-                    .is_some()
-                {
-                    self.buckets[hash as usize]
-                        .iter_mut()
-                        .find(|(k, _)| *k == hash)
-                        .map(|(_, v)| v.merge(record));
+        for (index, record) in other.records.into_iter().enumerate() {
+            if let Some(record) = record {
+                if let Some(self_record) = &mut self.records[index] {
+                    self_record.merge(record);
                 } else {
-                    self.buckets[hash as usize].push((hash, record));
-                    self.size += 1;
+                    self.records.insert(index, Some(record));
                 }
             }
         }
@@ -71,8 +52,8 @@ impl IntoIterator for Records {
     fn into_iter(self) -> Self::IntoIter {
         let mut records = Vec::new();
 
-        for bucket in self.buckets {
-            for (_, record) in bucket {
+        for bucket in self.records {
+            if let Some(record) = bucket {
                 records.push(record);
             }
         }
