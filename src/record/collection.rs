@@ -34,10 +34,9 @@ impl Records {
             return;
         }
 
-        let record = if bucket.len() == 1 {
-            bucket.get_mut(0)
-        } else {
-            bucket.iter_mut().find(|(k, _)| *k == hash)
+        let record = match bucket.len() {
+            1 => bucket.get_mut(0),
+            _ => bucket.iter_mut().find(|(k, _)| *k == hash),
         };
         record.map(|(_, v)| v.add(raw_record.temperature));
     }
