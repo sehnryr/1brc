@@ -1,20 +1,20 @@
 #![feature(portable_simd)]
 
-mod chunk_builder;
+mod chunks;
 mod hash;
-mod iter;
+mod iter_city;
 mod record;
 mod util;
 
 use std::path::Path;
 
-use crate::chunk_builder::ChunkBuilder;
-use crate::iter::IterCityTemperatures;
+use crate::chunks::Chunks;
+use crate::iter_city::IterCityTemperatures;
 use crate::record::Records;
 
 #[cfg(not(feature = "thread"))]
 fn get_records<P: AsRef<Path>>(path: P) -> Records {
-    let chunks = ChunkBuilder::new(path);
+    let chunks = Chunks::new(path);
     let mut records = Records::new();
 
     let mut i = 0;
@@ -42,7 +42,7 @@ fn get_records<P: AsRef<Path> + Clone + Send + 'static>(path: P) -> Records {
         let path = path.clone();
 
         threads.push(std::thread::spawn(move || {
-            let chunks = ChunkBuilder::new(path);
+            let chunks = Chunks::new(path);
             let mut records = Records::new();
 
             let mut i = 0;

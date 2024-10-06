@@ -2,13 +2,13 @@ use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::Path;
 
-use crate::util::SeekByteHelper;
+use crate::util::SeekByte;
 
-pub struct ChunkBuilder<P> {
+pub struct Chunks<P> {
     path: P,
 }
 
-impl<P: AsRef<Path>> ChunkBuilder<P> {
+impl<P: AsRef<Path>> Chunks<P> {
     pub fn new(path: P) -> Self {
         Self { path }
     }

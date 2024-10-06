@@ -2,11 +2,11 @@ use std::io::{Error, ErrorKind, Read, Seek};
 
 type Result<T> = std::result::Result<T, Error>;
 
-pub trait SeekByteHelper {
+pub trait SeekByte {
     fn seek_byte(&mut self, byte: u8) -> Result<usize>;
 }
 
-impl<R: Read + Seek> SeekByteHelper for R {
+impl<R: Read + Seek> SeekByte for R {
     fn seek_byte(&mut self, byte: u8) -> Result<usize> {
         let mut byte_buf = [0u8; 1];
         let mut offset = 0;

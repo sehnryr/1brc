@@ -1,5 +1,5 @@
-mod collection;
 mod record;
+mod records;
 
-pub use collection::Records;
 pub use record::Record;
+pub use records::Records;

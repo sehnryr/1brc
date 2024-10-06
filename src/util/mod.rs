@@ -1,5 +1,5 @@
 mod find;
-mod seek_helper;
+mod seek;
 
 pub use find::FindByte;
-pub use seek_helper::SeekByteHelper;
+pub use seek::SeekByte;
