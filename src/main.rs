@@ -1,3 +1,5 @@
+#![feature(portable_simd)]
+
 mod chunk_builder;
 mod hash;
 mod iter;
