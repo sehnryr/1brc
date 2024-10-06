@@ -30,10 +30,9 @@ fn get_records<P: AsRef<Path>>(path: P) -> Records {
 
 #[cfg(feature = "thread")]
 fn get_records<P: AsRef<Path> + Clone + Send + 'static>(path: P) -> Records {
-    let cpu_count: usize = std::thread::available_parallelism()
+    let thread_count: usize = std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(1);
-    let thread_count = cpu_count.min(8);
     let (tx, rx) = std::sync::mpsc::channel::<Records>();
 
     let mut threads = Vec::with_capacity(thread_count);
