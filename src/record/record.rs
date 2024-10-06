@@ -1,11 +1,11 @@
 use super::raw::RawRecord;
 
 pub struct Record {
-    pub city: Box<[u8]>,
-    pub min: i32,
-    pub max: i32,
-    pub sum: i32,
-    pub count: usize,
+    city: Box<[u8]>,
+    min: i32,
+    max: i32,
+    sum: i32,
+    count: usize,
 }
 
 impl std::fmt::Display for Record {
@@ -23,6 +23,11 @@ impl std::fmt::Display for Record {
 }
 
 impl Record {
+    #[inline(always)]
+    pub fn city(&self) -> &[u8] {
+        &self.city
+    }
+
     #[inline(always)]
     pub fn new(city: &[u8], temperature: i32) -> Self {
         Self {

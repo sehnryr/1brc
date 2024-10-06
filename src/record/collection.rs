@@ -78,7 +78,12 @@ impl IntoIterator for Records {
             }
         }
 
-        records.sort_by(|record1, record2| record1.city.cmp(&record2.city));
+        records.sort_by(|record1, record2| {
+            let city1 = record1.city();
+            let city2 = record2.city();
+
+            city1.cmp(city2)
+        });
 
         records.into_iter()
     }
