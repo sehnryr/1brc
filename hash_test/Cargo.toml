@@ -1,0 +1,8 @@
+[package]
+name = "hash_test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+create-sample = { path = "../create-sample" }
+itertools = "0.13.0"
