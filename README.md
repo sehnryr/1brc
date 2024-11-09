@@ -8,7 +8,7 @@ as possible, without dependencies.**
 
 ## Test Hardware
 
--   **CPU**: AMD Ryzen™ 7 5700X × 16
+-   **CPU**: AMD Ryzen™ 9 5950X × 32
 -   **RAM**: 32 GB DDR4
 
 If the file is read from a disk, it will be read sequencially and bottlenecked
